@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Visualizer + Wallpapers</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    header {
+      margin: 20px;
+    }
+    h1 {
+      margin: 5px;
+    }
+    input, button {
+      margin: 10px;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button {
+      background: #4cafef;
+      color: white;
+      font-weight: bold;
+    }
+    canvas {
+      border: 1px solid white;
+      width: 90%;
+      height: 300px;
+      background: rgba(0,0,0,0.7);
+      margin: 20px auto;
+    }
+    #wallpaper {
+      max-width: 90%;
+      margin: 15px auto;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.5);
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎵 Music Visualizer 🎵</h1>
+    <input type="file" id="fileInput" accept="audio/*">
+    <audio id="audio" controls></audio><br>
+    <button id="changeWallpaper">🎨 New Wallpaper</button>
+    <a id="downloadLink" download="wallpaper.jpg">
+      <button>⬇️ Download Wallpaper</button>
+    </a>
+  </header>
+
+  <canvas id="visualizer"></canvas>
+  <img id="wallpaper" alt="Wallpaper Preview">
+
+  <script>
+    // ---- MUSIC VISUALIZER ----
+    const fileInput = document.getElementById("fileInput");
+    const audio = document.getElementById("audio");
+    const canvas = document.getElementById("visualizer");
+    const ctx = canvas.getContext("2d");
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const source = audioCtx.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
+    function draw() {
+      requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(dataArray);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      let barWidth = (canvas.width / bufferLength) * 2.5;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        let barHeight = dataArray[i];
+        ctx.fillStyle = `rgb(${barHeight+100}, ${50+i}, ${200-i})`;
+        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+        x += barWidth + 1;
+      }
+    }
+
+    fileInput.addEventListener("change", function () {
+      const files = this.files;
+      if (files.length > 0) {
+        const fileURL = URL.createObjectURL(files[0]);
+        audio.src = fileURL;
+        audio.play();
+        audioCtx.resume();
+        draw();
+      }
+    });
+
+    // ---- WALLPAPER FEATURE ----
+    const wallpaperImg = document.getElementById("wallpaper");
+    const changeBtn = document.getElementById("changeWallpaper");
+    const downloadLink = document.getElementById("downloadLink");
+
+    function getWallpaper() {
+      // Generate a random wallpaper from Unsplash
+      const url = `https://in.pinterest.com/pin/63261569756232903/`;
+      wallpaperImg.src = url;
+      wallpaperImg.style.display = "block";
+      downloadLink.href = url;
+    }
+
+    changeBtn.addEventListener("click", getWallpaper);
+  </script>
+</body>
+</html>
